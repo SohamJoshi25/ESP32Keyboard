@@ -3,8 +3,9 @@
 
 BleKeyboard bleKeyboard;
 
-const uint8_t Output_Pins[] = {25,26,27,14,12,5}; // COL
-const uint8_t Input_Pins[] = {15,2,4,16,17,13,18,19,21,22,23,33,32,35,34,39,36}; // ROW
+
+const uint8_t Output_Pins[] = {12,14,27,26,25,5}; 
+const uint8_t Input_Pins[] = {15,2,4,16,17,18,19,21,22,23,33,32,35,34,39,36,13}; // ROW {15,2,4,16,17,18,19,21,22,23,33,32,35,34,39,36,13}
 
 const uint8_t Input_Pin_Count = sizeof(Input_Pins) / sizeof(Input_Pins[0]);
 const uint8_t Output_Pin_Count = sizeof(Output_Pins) / sizeof(Output_Pins[0]);
@@ -14,7 +15,7 @@ const uint8_t Index_Key_Mapping[6][17] = {
   {'`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', KEY_BACKSPACE, KEY_INSERT, KEY_HOME, KEY_PAGE_UP},
   {KEY_TAB, 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\\', KEY_DELETE, KEY_END, KEY_PAGE_DOWN},
   {KEY_CAPS_LOCK, 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l',';', '\'', 0, KEY_RETURN, 0, 0, 0},
-  {KEY_LEFT_SHIFT, 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', 0, '/', 0, KEY_RIGHT_SHIFT, 0, KEY_UP_ARROW, 0},
+  {KEY_LEFT_SHIFT, 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', 0, '.', '/', 0, KEY_RIGHT_SHIFT, 0, KEY_UP_ARROW, 0},
   {KEY_LEFT_CTRL, KEY_LEFT_GUI, KEY_LEFT_ALT, 0, ' ', 0, 0, 0, KEY_RIGHT_ALT, 0, 0, 0, 0, KEY_RIGHT_CTRL, KEY_LEFT_ARROW, KEY_DOWN_ARROW, KEY_RIGHT_ARROW}
 };
 
@@ -32,17 +33,11 @@ void setup() {
     pinMode(Output_Pins[i], OUTPUT);
     digitalWrite(Output_Pins[i], LOW);
   }
-
   
-
   bleKeyboard.begin();
-  bleKeyboard.setDelay(10);
   delay(100);
   Serial.println("Initialization complete.");
-}
 
-void checkKeyPress(uint8_t row, uint8_t col) {
-  
 }
 
 void loop() {
@@ -55,33 +50,31 @@ void loop() {
 
       for (uint8_t col = 0; col < Input_Pin_Count; col++) {
 
-        if (digitalRead(Input_Pins[col]) == HIGH) {
+        bool isPressed = digitalRead(Input_Pins[col]);
 
-          if(!Key_Pressed[row][col]) {
-            bleKeyboard.press(Index_Key_Mapping[row][col]);
-            Serial.printf("Pressed: Row %d, Col %d, Key %c ,%d\n",row,col,Index_Key_Mapping[row][col],Index_Key_Mapping[row][col]);
-            Key_Pressed[row][col] = true;
-         }
+        if (isPressed && !Key_Pressed[row][col]) {
 
-        } else {
+          Key_Pressed[row][col] = true;
+          bleKeyboard.press(Index_Key_Mapping[row][col]);
+          Serial.printf("Pressed: Row %d, Col %d, Key %c ,%d\n",row,col,Index_Key_Mapping[row][col],Index_Key_Mapping[row][col]);
 
-          if (Key_Pressed[row][col]) {
-            bleKeyboard.release(Index_Key_Mapping[row][col]);
-            Serial.printf("Released: Row %d, Col %d, Key %c ,%d\n",row,col,Index_Key_Mapping[row][col],Index_Key_Mapping[row][col]);
-            Key_Pressed[row][col] = false;
-          }
+        } else if (!isPressed && Key_Pressed[row][col]) {
+
+          Key_Pressed[row][col] = false;
+          bleKeyboard.release(Index_Key_Mapping[row][col]);
+          Serial.printf("Released: Row %d, Col %d, Key %c ,%d\n",row,col,Index_Key_Mapping[row][col],Index_Key_Mapping[row][col]);
 
         }
+
       }
 
+
       digitalWrite(Output_Pins[row], LOW);
-      delay(5);
     }
 
   } else {
 
     bleKeyboard.releaseAll();
-    Serial.println("Waiting for BLE connection...");
     delay(1000);
 
   }
